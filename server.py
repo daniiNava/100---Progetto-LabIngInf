@@ -6,3 +6,4 @@ async def main():
     print(ret["parsed_text"].replace("## ", "\n").replace("_", "").replace("**", ""))
 if __name__ == "__main__":
     asyncio.run(main())
+#Prova
