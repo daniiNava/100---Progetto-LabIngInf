@@ -1,10 +1,12 @@
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode, DefaultMarkdownGenerator
 from abc import ABC,abstractmethod
+#https://people.com	https://www.bbc.com	https://www.repubblica.it
 class Parser(ABC):
     def __init__(self):
         pass
     async def parse(self, url : str) -> dict:
         pass
+
 class ParserWikipediaIT(Parser):
     def __init__(self):
         self.domain = "it.wikipedia.org"
@@ -44,3 +46,21 @@ class ParserWikipediaIT(Parser):
             "html_text":html_text,
             "parsed_text":result.markdown.split("\n",1)[1]
         }
+
+class ParserBBC(Parser):
+    def __init__(self):
+        self.domain = "https://www.bbc.com"
+    async def parse(self, url : str) -> dict:
+        pass
+
+class ParserPeople(Parser):
+    def __init__(self):
+        self.domain = "https://people.com"
+    async def parse(self, url : str) -> dict:
+        pass
+
+class ParserRepubblica(Parser):
+    def __init__(self):
+        self.domain = "https://www.repubblica.it"
+    async def parse(self, url : str) -> dict:
+        pass
