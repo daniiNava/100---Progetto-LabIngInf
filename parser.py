@@ -10,15 +10,18 @@ class Parser(ABC):
 class ParserWikipediaIT(Parser):
     def __init__(self):
         self.domain = "it.wikipedia.org"
+        
     async def parse(self, url : str) -> dict:
+        #TODO: Rimozione link riferimento alla fine
         html_text = ""
+        clean_sup_script = """document.querySelectorAll('sup').forEach(el => el.remove());"""
+
         browser_cfg = BrowserConfig(headless=False)
         crawler_cfg_html = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)
-        clean_sup_script = """document.querySelectorAll('sup').forEach(el => el.remove());"""
         crawler_cfg_parsed = CrawlerRunConfig(
             js_code=clean_sup_script,
             cache_mode=CacheMode.BYPASS,
-            markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
+            markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True,"with_metadata": False}),
             css_selector=".firstHeading,.mw-body-content",
             excluded_selector=".hatnote,[aria-labelledby='Note'],[aria-labelledby='Note'] ~ *,.mw-editsection,.infobox",
             excluded_tags=["form", "header", "footer", "nav", "script", "style", "figure", "sup", "img"],
@@ -38,11 +41,11 @@ class ParserWikipediaIT(Parser):
                 config = crawler_cfg_parsed
             )
         if not result.success:
-            raise RuntimeError(result.error_message)  
+            raise RuntimeError(result.error_message)
         return{
             "url":url,
             "domain":self.domain,
-            "title":result.markdown.split("\n",1)[0].replace("# ",""),
+            "title":result.markdown.split("\n",1)[0].replace("#","").strip(),
             "html_text":html_text,
             "parsed_text":result.markdown.split("\n",1)[1]
         }
