@@ -10,7 +10,7 @@ class Parser(ABC):
 class ParserWikipediaIT(Parser):
     def __init__(self):
         self.domain = "it.wikipedia.org"
-        
+
     async def parse(self, url : str) -> dict:
         #TODO: Rimozione link riferimento alla fine
         html_text = ""
@@ -47,7 +47,7 @@ class ParserWikipediaIT(Parser):
             "domain":self.domain,
             "title":result.markdown.split("\n",1)[0].replace("#","").strip(),
             "html_text":html_text,
-            "parsed_text":result.markdown.split("\n",1)[1]
+            "parsed_text":result.markdown.split("\n",1)[1].rsplit("\n",2)[0]
         }
 
 class ParserBBC(Parser):
