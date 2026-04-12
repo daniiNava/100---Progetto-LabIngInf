@@ -1,17 +1,36 @@
 # Questo è il modulo principale del server, definisce l'istanza FastAPI e gli endpoint sulla porta 8004.
 # Inoltre, c'è la gestione delle richieste HTTP.
 
-from fastapi import FastAPI, HTTPException, Query, APIRouter
+from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from urllib.parse import urlparse
-from .models import (
-    DocumentData, EvaluateRequest, EvaluateResponse, DomainsResponse, 
-    TokenLevelEval, GoldStandardData, FullGoldStandardResponse, FullEvalResponse)
-from .services.parser_service import run_parser
-from .services.evaluation_service import calculate_metrics
-from .services.gs_services import get_gold_standard_by_url, get_full_gold_standard
 
-app = FastAPI(title="Pipeline NLP - Esonero 1", version="1.0")
+import sys
+import asyncio
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+
+from models import (
+    DocumentData, EvaluateRequest, EvaluateResponse, DomainsResponse, 
+    TokenLevelEval, GoldStandardData, FullGoldStandardResponse
+)
+from services.parser_service import run_parser
+from services.evaluation_service import calculate_metrics
+from services.gs_service import get_gold_standard_by_url, get_full_gold_standard
+
+app = FastAPI(title="Minera Web Parser API", version="1.0")
+
+# Abilitazione CORS per permettere al frontend (porta 8004) di comunicare con noi (porta 8003)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Definizione dei domini supportati
 SUPPORTED_DOMAINS = ["it.wikipedia.org", "en.wikipedia.org"]
 
@@ -24,7 +43,9 @@ async def get_domains():
 async def parse_url(url: str = Query(..., description="URL da parsare")):
     """Esegue il parser per un documento di un dominio supportato."""
     # 1. Estrazione del dominio dall'URL
-    domain = url.split("/")[2]
+    parsed_url = urlparse(url)
+    domain = parsed_url.netloc
+
     # 2. Verifica se il dominio è valido e supportato
     if not domain:
         raise HTTPException(status_code=400, detail="Formato URL non valido")
@@ -38,13 +59,6 @@ async def parse_url(url: str = Query(..., description="URL da parsare")):
 
     # 4. Restituzione dei dati (Serializzazione tramite il modello Pydantic)
     return DocumentData(**result_dict)
-
-@app.post("/evaluate", response_model=EvaluateResponse)
-async def evaluate_document(request: EvaluateRequest):
-    """Calcola le metriche di valutazione per un documento parsato (Precision, Recall, F1)."""
-    # 1. Passare request.parsed_text e request.gold_text alla funzione di valutazione
-    # 2. Costruire e restituire l'EvaluateResponse
-    pass
 
 @app.get("/gold_standard", response_model=GoldStandardData)
 async def get_gold_standard(url: str = Query(..., description="L'URL del documento richiesto")):
@@ -86,7 +100,7 @@ async def avaluate_document(request: EvaluateRequest):
     """
 
     # Invocazione del servizio matematico per il calcolo delle metriche
-    metrics_dict = TokenLevelEval(**metrics_dict)
+    metrics_dict = calculate_metrics(request.parsed_text, request.gold_text)
 
     # Instanziazione del modello annidato TokenLevelEval
     token_eval = TokenLevelEval(**metrics_dict)
@@ -95,7 +109,7 @@ async def avaluate_document(request: EvaluateRequest):
     return EvaluateResponse(token_level_eval=token_eval)
 
 
-@app.get("/full_gs_eval", response_model=FullEvalResponse)      # Valutazione generale di un dominio
+@app.get("/full_gs_eval", response_model=EvaluateResponse)      # Valutazione generale di un dominio
 async def evaluate_full_domain(domain: str = Query(..., description="Il dominio da valutare")):
     """
     Esegue una valutazione completa: recupera il Gold Standard per il dominio,
@@ -131,7 +145,7 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
             # Calcolo delle metriche per la singola iterazione
             metrics = calculate_metrics(parsed_text, gold_text)
 
-            total_precision += metrics["precisione"]
+            total_precision += metrics["precision"]
             total_recall += metrics["recall"]
             total_f1 += metrics["f1"]
             doc_count += 1
@@ -148,10 +162,25 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
     avg_recall = total_recall / doc_count
     avg_f1 = total_f1 / doc_count
 
-    return FullEvalResponse(
-        domain = domain, 
-        average_precision=round(avg_precision, 4),
-        average_recall=round(avg_recall, 4),
-        average_f1=round(avg_f1, 4),
-        evaluated_documents=doc_count
+    # Creazione dell'oggetto TokenLevelEval con le medie
+    avg_token_eval = TokenLevelEval(
+        precision=round(avg_precision, 4),
+        recall=round(avg_recall, 4),
+        f1=round(avg_f1, 4),
     )
+
+    # Restituzione di EvaluateResponse
+    return EvaluateResponse(token_level_eval=avg_token_eval)
+
+if __name__ == "__main__":
+    import uvicorn
+    import asyncio
+    import sys
+
+    # Forza windows a usare il gestore di eventi corretto per i sottoprocessi (PlayWright)
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    
+    uvicorn.run(app, host="127.0.0.1", port=8003)
+
+    # avviare semplicemente scrviendo nel termile: "python server.py"

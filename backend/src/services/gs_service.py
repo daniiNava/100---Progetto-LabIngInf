@@ -21,15 +21,15 @@ def get_gold_standard_by_url(url: str, domain:str) -> Dict[str, str]:
 
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            data_list = json.load(f)    # Il file è una lista di dizionari
 
             # Ricerca lineare dell'URL all'interno della lista
-            for entry in data.get("gold_standard", []):
+            for entry in data_list:
                 if(entry.get("url")) == url:
                     return entry
                 
         # Se il ciclo termina senza ritorni, l'URL non è presente
-        raise HTTPException(status_code=404, detail="URL non presente nel Golden Standard")
+        raise HTTPException(status_code=404, detail="URL non presente nel Gold Standard")
 
 
     except json.JSONDecodeError:
@@ -44,8 +44,8 @@ def get_full_gold_standard(domain: str) -> List[Dict[str, str]]:
     
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get("gold_standard", [])
+            data_list = json.load(f)
+            return data_list
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Corruzione del file JSON del Gold Standard")
         

@@ -12,7 +12,7 @@ async def run_parser(url: str, domain: str) -> Dict[str, str]:
     )
 
     try:
-        async with AsyncWebCrawler(browser_cfg) as crawler:
+        async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(url=url, config=crawler_cfg)
 
             if not result.success:

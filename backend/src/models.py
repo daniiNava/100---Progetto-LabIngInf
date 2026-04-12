@@ -38,10 +38,3 @@ class EvaluateResponse(BaseModel):
     token_level_eval: TokenLevelEval
     x_eval: Dict = {} # Placeholder per eventuali metriche extra
 
-class FullEvalResponse(BaseModel):
-    domain: str
-    average_precision: float
-    average_recall: float
-    average_f1: float
-    evaluated_documents: int
-
