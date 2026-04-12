@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 # Definizione dei domini supportati
-SUPPORTED_DOMAINS = ["it.wikipedia.org", "en.wikipedia.org"]
+SUPPORTED_DOMAINS = ["it.wikipedia.org", "en.wikipedia.org", "people.com", "www.bbc.com", "www.repubblica.it"]
 
 @app.get("/domains", response_model=DomainsResponse)
 async def get_domains():
@@ -93,7 +93,7 @@ async def get_full_gold_standard_endpoint(domain: str = Query(..., description="
     return FullGoldStandardResponse(gold_standard=gs_data)
 
 @app.post("/evaluate", response_model=EvaluateResponse)     # Valutazione singola
-async def avaluate_document(request: EvaluateRequest):
+async def evaluate_document(request: EvaluateRequest):
     """
     Calcola le metriche di valutazione (Precision, Recall, F1-Score) 
     confrontando un testo estratto con il relativo Golden Standard

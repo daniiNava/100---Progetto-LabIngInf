@@ -6,11 +6,18 @@ from typing import Dict
 async def run_parser(url: str, domain: str) -> Dict[str, str]:
     """Servizio asincrono per l'esteazione e la pulizia del testo da una pagina Web."""
     browser_cfg = BrowserConfig(headless=True) 
+    
+    # Definizione di selettori specifici per migliorare la qualità dell'output per LLM
+    # Se il dominio è uno di quelli assegnati successivamente (ovvero è una testata giornalistica), 
+    # si escludono utleriori elementi di disturbo
+    excluded = ['nav', 'footer', 'script', 'style', 'aside', '.ads', '.social.share']
+
     crawler_cfg = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS,
-        excluded_tags=['nav', 'footer', 'script', 'style', 'aside'],
+        excluded_tags=excluded,
+        magic_mode=True  # Opzione di Crawl4AI per bypassare i blocchi anti-bot tipici dei siti di news
     )
-
+    
     try:
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(url=url, config=crawler_cfg)
@@ -19,7 +26,7 @@ async def run_parser(url: str, domain: str) -> Dict[str, str]:
                 # Sollevare un'eccezione HTTP che viene gestita automaticamente da FastAPI
                 raise HTTPException(
                     status_code=502, 
-                    detail=f"Errore del crawler (Bad Gateway): {result.error.message}"
+                    detail=f"Errore del crawler su {domain}: {result.error.message}"
                 )
             return {
                 "url": url, 
