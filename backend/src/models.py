@@ -25,15 +25,23 @@ class FullGoldStandardResponse(BaseModel):
     gold_standard: List[GoldStandardData]
 
 # Modelli per /evalueate
-class EvalueateRequest(BaseModel):
+class EvaluateRequest(BaseModel):
     parsed_text: str
     gold_text: str
     
 class TokenLevelEval(BaseModel):
-    precision: flaot
+    precision: float
     recall: float
     f1: float
 
-class EvalueateResponse(BaseModel):
+class EvaluateResponse(BaseModel):
     token_level_eval: TokenLevelEval
     x_eval: Dict = {} # Placeholder per eventuali metriche extra
+
+class FullEvalResponse(BaseModel):
+    domain: str
+    average_precision: float
+    average_recall: float
+    average_f1: float
+    evaluated_documents: int
+

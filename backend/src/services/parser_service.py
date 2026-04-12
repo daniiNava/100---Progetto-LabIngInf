@@ -1,3 +1,4 @@
+# Modulo che contiene la logica per chiamare Crawl4AI (estrazione dati)
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from fastapi import HTTPException
 from typing import Dict
