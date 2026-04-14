@@ -17,7 +17,6 @@ class ParserWikipediaIT(Parser):
         clean_sup_script = """document.querySelectorAll('sup').forEach(el => el.remove());"""
 
         browser_cfg = BrowserConfig(headless=False)
-        crawler_cfg_html = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)
         crawler_cfg_parsed = CrawlerRunConfig(
             js_code=clean_sup_script,
             cache_mode=CacheMode.BYPASS,
@@ -32,8 +31,7 @@ class ParserWikipediaIT(Parser):
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
-                url = url,
-                config = crawler_cfg_html
+                url = url
             )
             html_text = result.html
             title = result.metadata.get('og:title')
@@ -58,11 +56,10 @@ class ParserBBC(Parser):
         html_text = ""
         title = ""
         browser_cfg = BrowserConfig(headless=False)
-        crawler_cfg_html = CrawlerRunConfig(cache_mode=CacheMode.BYPASS)
         crawler_cfg_parsed = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
-            css_selector="#main-content",
+            css_selector="#main-content,.HooNV,.fWTqWp",
             excluded_tags=["form","header", "footer", "nav", "script", "style", "figure", "sup", "img","button"],
             exclude_external_links=True,    
             exclude_social_media_links=True,
@@ -71,8 +68,7 @@ class ParserBBC(Parser):
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
-                url = url,
-                config = crawler_cfg_html
+                url = url
             )
             html_text = result.html
             title = result.metadata.get('og:title')
@@ -87,7 +83,7 @@ class ParserBBC(Parser):
             "domain":self.domain,
             "title":title,
             "html_text":html_text,
-            "parsed_text":result.markdown.rsplit("\n",2)[0]
+            "parsed_text":result.markdown.rsplit("--",2)[0]
         }
 
 class ParserPeople(Parser):
@@ -100,4 +96,36 @@ class ParserRepubblica(Parser):
     def __init__(self):
         self.domain = "https://www.repubblica.it"
     async def parse(self, url : str) -> dict:
-        pass
+        html_text = ""
+        title = ""
+        browser_cfg = BrowserConfig(headless=False)
+        crawler_cfg_parsed = CrawlerRunConfig(
+            cache_mode=CacheMode.BYPASS,
+            markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
+            css_selector=".story__text,.story__summary",
+            excluded_tags=["form", "footer", "nav", "script", "style", "figure", "img","button"],
+            excluded_selector=".inline-article",
+            exclude_external_links=True,    
+            exclude_social_media_links=True,
+            exclude_external_images=True
+            )
+
+        async with AsyncWebCrawler(config=browser_cfg) as crawler:
+            result = await crawler.arun(
+                url = url
+            )
+            html_text = result.html
+            title = result.metadata.get('og:title')
+            result = await crawler.arun(
+                url = f"raw:{html_text}",
+                config = crawler_cfg_parsed
+            )
+        if not result.success:
+            raise RuntimeError(result.error_message)
+        return{
+            "url":url,
+            "domain":self.domain,
+            "title":title,
+            "html_text":html_text,
+            "parsed_text":result.markdown
+        }
