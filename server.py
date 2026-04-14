@@ -108,10 +108,59 @@ async def testRepubblica():
     result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
     print(f"{ret["title"]} : {result:2f}")
 
+
+async def testPeople():
+    parser = ParserPeople()
+    ret = await parser.parse("https://people.com/oscars-2024-everything-to-know-8548056")
+    parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+    
+    with open('GS/People.json', 'r', encoding='utf-8') as gs:
+        gs_file = json.load(gs)
+    gold_text = gs_file[0]["gold_text"]
+    result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
+    print(f"{ret["title"]} : {result:2f}")
+
+    ret = await parser.parse("https://people.com/hilarie-burton-searches-for-justice-in-season-3-of-true-crime-story-it-couldnt-happen-here-exclusive-11909272")
+    parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+    
+    with open('GS/People.json', 'r', encoding='utf-8') as gs:
+        gs_file = json.load(gs)
+    gold_text = gs_file[1]["gold_text"]
+    result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
+    print(f"{ret["title"]} : {result:2f}")
+
+    ret = await parser.parse("https://people.com/2025-will-look-more-normal-for-royal-family-than-2024-8735207")
+    parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+    
+    with open('GS/People.json', 'r', encoding='utf-8') as gs:
+        gs_file = json.load(gs)
+    gold_text = gs_file[2]["gold_text"]
+    result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
+    print(f"{ret["title"]} : {result:2f}")
+
+    ret = await parser.parse("https://people.com/what-happened-to-alissa-turney-8725736")
+    parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+    
+    with open('GS/People.json', 'r', encoding='utf-8') as gs:
+        gs_file = json.load(gs)
+    gold_text = gs_file[3]["gold_text"]
+    result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
+    print(f"{ret["title"]} : {result:2f}")
+
+    ret = await parser.parse("https://people.com/blake-lively-reveals-her-hidden-talent-is-interior-design-8421811")
+    parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+    
+    with open('GS/People.json', 'r', encoding='utf-8') as gs:
+        gs_file = json.load(gs)
+    gold_text = gs_file[4]["gold_text"]
+    result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
+    print(f"{ret["title"]} : {result:2f}")
+
 async def main():
     #await testWikipediaIT()
-    await testBBC()
+    #await testBBC()
     #await testRepubblica()
+    await testPeople()
 
 
 if __name__ == "__main__":

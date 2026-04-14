@@ -90,7 +90,39 @@ class ParserPeople(Parser):
     def __init__(self):
         self.domain = "https://people.com"
     async def parse(self, url : str) -> dict:
-        pass
+        html_text = ""
+        title = ""
+        browser_cfg = BrowserConfig(headless=False)
+        crawler_cfg_parsed = CrawlerRunConfig(
+            cache_mode=CacheMode.BYPASS,
+            markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
+            css_selector=".article-subheading,#article-content_1-0",
+            excluded_tags=["form", "footer","header", "nav", "script", "style", "figure", "img","button","strong"],
+            excluded_selector=".people-sc-block-featuredlink,.people-sc-block-callout,.people-sc-block-spotlight--mid-circ,.people-sc-block-featuredlink--people-app-promo",
+            exclude_external_links=True,    
+            exclude_social_media_links=True,
+            exclude_external_images=True
+            )
+
+        async with AsyncWebCrawler(config=browser_cfg) as crawler:
+            result = await crawler.arun(
+                url = url
+            )
+            html_text = result.html
+            title = result.metadata.get('og:title')
+            result = await crawler.arun(
+                url = f"raw:{html_text}",
+                config = crawler_cfg_parsed
+            )
+        if not result.success:
+            raise RuntimeError(result.error_message)
+        return{
+            "url":url,
+            "domain":self.domain,
+            "title":title,
+            "html_text":html_text,
+            "parsed_text":result.markdown
+        }
 
 class ParserRepubblica(Parser):
     def __init__(self):
