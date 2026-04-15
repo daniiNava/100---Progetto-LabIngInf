@@ -17,7 +17,7 @@ class ParserWikipediaIT(Parser):
             cache_mode=CacheMode.BYPASS,
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
             css_selector=".mw-body-content",
-            excluded_selector=".hatnote,[aria-labelledby='Note'],[aria-labelledby='Note'] ~ *,.mw-editsection,.infobox",
+            excluded_selector=".hatnote,[aria-labelledby='Note'],[aria-labelledby='Note'] ~ *,.mw-editsection,.infobox,.avviso",
             excluded_tags=["form", "header", "footer", "nav", "script", "style", "figure", "sup", "img"],
             exclude_external_links=True,    
             exclude_social_media_links=True,
