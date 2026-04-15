@@ -1,33 +1,32 @@
 # Modulo che contiene l'algoritmo di calcolo delle metriche e la lettura dei file JSON del gold standard.
 import re
-from typing import Set, Dict
+from typing import Dict
+from markdownCleaner import MarkdownCleaner
 
-def _tokenize(text: str) -> Set[str]:
+
+def _tokenize(text: str) -> list[str]:
     """Tokenizzazione e normalizzazione del testo: rimozione di punteggiatura, conversione a minuscolo e split."""
-    if not text:
-        return set()
-    clean_text = re.sub(r'[*#_]|\[.*?\]\(.*?\)', '', text)
-    return set(re.findall(r'\b\w+\b', clean_text.lower()))
+    clean_text = re.sub(r"[,.:|]|---|```", "", text).lower()
+    return clean_text.split()
 
-def calculate_metrics(parsed_text: str, gold_text:str) -> Dict[str, float]:
-    """Calcola Precision, Recall e F1-score a livello di token"""
-    token_estratti = _tokenize(parsed_text)
-    token_gs = _tokenize(gold_text)
-
-    intersezione = token_estratti.intersection(token_gs)
-    len_int = len(intersezione)
-    len_est = len(token_estratti)
-    len_gs = len(token_gs)
-
-    precision = (len_int / len_est) if len_est > 0 else 0.0
-    recall = (len_int / len_gs) if len_gs > 0 else 0.0
-
-    f1_score = 0.0
-    if(precision + recall) > 0:
-        f1_score = 2 * (precision*recall) / (precision + recall)
-
+def calculate_metrics(parsed_text : str, gold_text : str) -> Dict[str, float]:
+    tokens_estratti = _tokenize(MarkdownCleaner.clean(parsed_text))
+    tokens_gs = _tokenize(gold_text)
+    n_correct_words = 0
+    for i in range(min(len(tokens_estratti),len(tokens_gs))):
+        if tokens_estratti[i] == tokens_gs[i]: n_correct_words += 1
+        else: print(f"{tokens_estratti[i]} {tokens_gs[i]} {i}")
+    precision = n_correct_words/len(tokens_estratti)
+    recall = n_correct_words/len(tokens_gs)
+    f1 = 2 * precision * recall / (precision + recall)
     return{
         "precision": round(precision, 4),
         "recall": round(recall, 4),
-        "f1": round(f1_score, 4)
+        "f1": round(f1, 4)
     }
+
+
+
+
+
+

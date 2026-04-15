@@ -3,7 +3,6 @@
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
 from urllib.parse import urlparse
 
 import sys
@@ -46,19 +45,13 @@ async def parse_url(url: str = Query(..., description="URL da parsare")):
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
 
-    # 2. Verifica se il dominio è valido e supportato
-    if not domain:
-        raise HTTPException(status_code=400, detail="Formato URL non valido")
-    
-    if domain not in SUPPORTED_DOMAINS:
-        raise HTTPException(status_code=400, detail="Dominio non supportato")
-    
-    # 3. Chiamata al servizio asincrono di parsing (Crawl4AI)
+    # 2. Chiamata al servizio asincrono di parsing (Crawl4AI)
     # Il costrutto 'await' delega l'esecuzione senza bloccare il thread principale
     result_dict = await run_parser(url, domain)
 
-    # 4. Restituzione dei dati (Serializzazione tramite il modello Pydantic)
-    return DocumentData(**result_dict)
+    # 3. Restituzione dei dati (Serializzazione tramite il modello Pydantic)
+    return result_dict
+    # return DocumentData(**result_dict)
 
 @app.get("/gold_standard", response_model=GoldStandardData)
 async def get_gold_standard(url: str = Query(..., description="L'URL del documento richiesto")):
@@ -103,11 +96,11 @@ async def evaluate_document(request: EvaluateRequest):
     metrics_dict = calculate_metrics(request.parsed_text, request.gold_text)
 
     # Instanziazione del modello annidato TokenLevelEval
+    # token_eval = metrics_dict
     token_eval = TokenLevelEval(**metrics_dict)
-
+    
     # Restituzione della risposta strutturata
     return EvaluateResponse(token_level_eval=token_eval)
-
 
 @app.get("/full_gs_eval", response_model=EvaluateResponse)      # Valutazione generale di un dominio
 async def evaluate_full_domain(domain: str = Query(..., description="Il dominio da valutare")):

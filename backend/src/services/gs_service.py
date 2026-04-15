@@ -6,12 +6,13 @@ from    typing  import List, Dict
 
 # Costruzione dinamica del percorso di base
 # resolve(), ottiene il percorso assoluto, i parent risalgono la gerarchia fino alla root
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-GS_DIR = BASE_DIR / "gs_data"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+GS_DIR = BASE_DIR / "GS"
+FILE_DOMAINS = {"it.wikipedia.org":"WikipediaIT.json", "people.com":"People.json", "www.bbc.com":"BBC.json", "www.repubblica.it":"Repubblica.json"}
 
 def get_gold_standard_by_url(url: str, domain:str) -> Dict[str, str]:
     """Legge il file JSON relativo a un dominio e restituisce la singola entry corrispondente all'URL richiesto"""
-    file_path = GS_DIR / f"{domain}_gs.json"
+    file_path = GS_DIR / FILE_DOMAINS[domain]
     
     if not file_path.exists():
         raise HTTPException(
@@ -37,7 +38,7 @@ def get_gold_standard_by_url(url: str, domain:str) -> Dict[str, str]:
     
 def get_full_gold_standard(domain: str) -> List[Dict[str, str]]:
     """Legge e restituisce l'intero contenuto del file Gold Standard per un dato dominio"""
-    file_path = GS_DIR / f"{domain}_gs.json"
+    file_path = GS_DIR / FILE_DOMAINS[domain]
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=f"File Gold Standard per il dominio {domain} non trovato")
