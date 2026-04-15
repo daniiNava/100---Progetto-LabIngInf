@@ -12,6 +12,7 @@ async def testWikipediaIT():
     with open('GS/WikipediaIT.json', 'r', encoding='utf-8') as gs:
         gs_file = json.load(gs)
     await validate_gs(gs_file,parser)
+    await validate_url("","https://it.wikipedia.org/wiki/Python",parser)
 
 async def testBBC():
     parser = ParserBBC()
@@ -41,6 +42,14 @@ async def validate_gs(gs_file : dict, parser : Parser):
 
         result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
         print(f"{ret["title"]} : {result:2f}")
+        
+async def validate_url(gold_text : str, url : str, parser : Parser): 
+    ret = await parser.parse_by_url(url)
+    parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+
+    result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
+    print(f"{ret["title"]} : {result:2f}")
+    scrivi_json(ret)
 
 async def main():
     await testWikipediaIT()

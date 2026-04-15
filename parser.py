@@ -18,7 +18,7 @@ class ParserWikipediaIT(Parser):
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
             css_selector=".mw-body-content",
             excluded_selector=".hatnote,[aria-labelledby='Note'],[aria-labelledby='Note'] ~ *,.mw-editsection,.infobox,.avviso",
-            excluded_tags=["form", "header", "footer", "nav", "script", "style", "figure", "sup", "img"],
+            excluded_tags=["form", "header", "footer", "nav", "script", "style", "figure", "sup", "img","button"],
             exclude_external_links=True,    
             exclude_social_media_links=True,
             exclude_external_images=True
@@ -79,6 +79,7 @@ class ParserBBC(Parser):
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
             css_selector="#main-content,.HooNV,.fWTqWp",
             excluded_tags=["form","header", "footer", "nav", "script", "style", "figure", "sup", "img","button"],
+            excluded_selector="#additional-reporting-by-grace-eliza-goodwin,[id='top-picture-credits:-reuters-and-getty-images'],[id='is-the-home-on-the-website-and-app-for-the-best-analysis,-with-fresh-perspectives-that-challenge-assumptions-and-deep-reporting-on-the-biggest-issues-of-the-day.-emma-barnett-and-john-simpson-bring-their-pick-of-the-most-thought-provoking-deep-reads-and-analysis,-every-saturday.'],[id='sign-up-for-the-newsletter-here'],[id='bbc-indepth']",
             exclude_external_links=True,    
             exclude_social_media_links=True,
             exclude_external_images=True
