@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 # Definizione dei domini supportati
-SUPPORTED_DOMAINS = ["it.wikipedia.org", "en.wikipedia.org", "people.com", "www.bbc.com", "www.repubblica.it"]
+SUPPORTED_DOMAINS = ["it.wikipedia.org", "people.com", "www.bbc.com", "www.repubblica.it"]
 
 @app.get("/domains", response_model=DomainsResponse)
 async def get_domains():
