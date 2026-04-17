@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: minerva_backend
+    ports:
+      - "8003:8003"
+    volumes: 
+      - ./:/app
+        
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8004:8004"
+    environment:
+      - BACKEND_URL=http://backend:8003
+    depends_on:
+      - backend
+    volumes: 
+      - ./:/app
