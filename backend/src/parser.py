@@ -28,7 +28,7 @@ class ParserWikipediaIT(Parser):
         html_text = ""
         title = ""
 
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
         
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
@@ -54,7 +54,7 @@ class ParserWikipediaIT(Parser):
     async def parse_by_gs(self, gs_json : dict) -> dict:
         html_text = gs_json["html_text"]
 
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
         
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
@@ -87,7 +87,7 @@ class ParserBBC(Parser):
     async def parse_by_url(self, url : str) -> dict:
         html_text = ""
         title = ""
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
@@ -113,7 +113,7 @@ class ParserBBC(Parser):
     async def parse_by_gs(self, gs_json : dict) -> dict:
         html_text = gs_json["html_text"]
 
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
@@ -146,7 +146,7 @@ class ParserPeople(Parser):
     async def parse_by_url(self, url : str) -> dict:
         html_text = ""
         title = ""
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
@@ -170,7 +170,7 @@ class ParserPeople(Parser):
     async def parse_by_gs(self, gs_json : dict) -> dict:
         html_text = gs_json["html_text"]
 
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
@@ -203,7 +203,7 @@ class ParserRepubblica(Parser):
     async def parse_by_url(self, url : str) -> dict:
         html_text = ""
         title = ""
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
         
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
@@ -227,7 +227,7 @@ class ParserRepubblica(Parser):
     async def parse_by_gs(self, gs_json : dict) -> dict:
         html_text = gs_json["html_text"]
 
-        browser_cfg = BrowserConfig(headless=False)
+        browser_cfg = BrowserConfig(headless=True)
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(

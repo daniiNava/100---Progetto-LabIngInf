@@ -76,7 +76,9 @@ async def analyze(request: Request, url: str = Form(...)): #url: .. indica che l
             else:
                 error_msg= "URL passato con successo, ma non è presente nel gold standard "
         else:
-            error_msg = "Errore durante il parsing. Assicurati che il dominio sia supportato."
+            # Estrazione dinamica dell'errore restituito da FastAPI
+            dettaglio_errore = richiesta_parser.json().get("detail", "Errore di parsing sconosciuto")
+            error_msg = f"Errore dal server: {dettaglio_errore}"
                     
     except requests.RequestException as e:
         error_msg = f"Errore di connessione al backend: {e}"
