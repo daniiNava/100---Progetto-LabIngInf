@@ -32,7 +32,7 @@ class ParserWikipediaIT(Parser):
         
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
-                url = url
+                url = url, magic_mode=True
             )
             if not result.success:
                 raise RuntimeError(result.error_message)
@@ -73,7 +73,7 @@ class ParserWikipediaIT(Parser):
 
 class ParserBBC(Parser):
     def __init__(self):
-        self.domain = "https://www.bbc.com"
+        self.domain = "www.bbc.com"
         self.crawler_cfg_parsed = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
@@ -91,7 +91,7 @@ class ParserBBC(Parser):
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
-                url = url
+                url = url, magic_mode=True
             )
             if not result.success:
                 raise RuntimeError(result.error_message)
@@ -132,7 +132,7 @@ class ParserBBC(Parser):
 
 class ParserPeople(Parser):
     def __init__(self):
-        self.domain = "https://people.com"
+        self.domain = "people.com"
         self.crawler_cfg_parsed = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
@@ -150,7 +150,7 @@ class ParserPeople(Parser):
 
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
-                url = url
+                url = url, magic_mode=True
             )
             html_text = result.html
             title = result.metadata.get('og:title')
@@ -189,7 +189,7 @@ class ParserPeople(Parser):
 
 class ParserRepubblica(Parser):
     def __init__(self):
-        self.domain = "https://www.repubblica.it"
+        self.domain = "www.repubblica.it"
         self.crawler_cfg_parsed = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True}),
@@ -207,7 +207,7 @@ class ParserRepubblica(Parser):
         
         async with AsyncWebCrawler(config=browser_cfg) as crawler:
             result = await crawler.arun(
-                url = url
+                url = url, magic_mode=True
             )
             html_text = result.html
             title = result.metadata.get('og:title')

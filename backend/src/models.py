@@ -38,3 +38,6 @@ class EvaluateResponse(BaseModel):
     token_level_eval: TokenLevelEval
     x_eval: Dict = {} # Placeholder per eventuali metriche extra
 
+class ParseRequest(BaseModel):
+    url: str
+    html_text: str 

@@ -13,9 +13,9 @@ if sys.platform == "win32":
 
 from models import (
     DocumentData, EvaluateRequest, EvaluateResponse, DomainsResponse, 
-    TokenLevelEval, GoldStandardData, FullGoldStandardResponse
+    TokenLevelEval, GoldStandardData, FullGoldStandardResponse, ParseRequest
 )
-from services.parser_service import run_parser
+from services.parser_service import run_parser, run_parser_raw
 from services.evaluation_service import calculate_metrics
 from services.gs_service import get_gold_standard_by_url, get_full_gold_standard
 
@@ -85,6 +85,18 @@ async def get_full_gold_standard_endpoint(domain: str = Query(..., description="
     # Serializzazione tramite Pydantic
     return FullGoldStandardResponse(gold_standard=gs_data)
 
+@app.post("/parse", response_model=DocumentData)
+async def parse_raw_html(request: ParseRequest):
+    #eseguiamo il parsing da un html grezzo fornito dall'utente
+    parsed_url=urlparse(request.url)
+    domain=parsed_url.netloc
+    if not domain:
+        raise HTTPException(status_code=400, detail="Formato URL non valido")
+    if domain not in SUPPORTED_DOMAINS:
+        raise HTTPException(status_code=400, detail="Dominio non supportato")
+    result_dict=await run_parser_raw(request.url, domain, request.html_text)
+    return DocumentData(**result_dict)
+
 @app.post("/evaluate", response_model=EvaluateResponse)     # Valutazione singola
 async def evaluate_document(request: EvaluateRequest):
     """
@@ -120,13 +132,12 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
     total_precision = 0.0
     total_recall = 0.0
     total_f1 = 0.0
-    doc_count = 0
+    doc_count = len(gs_data_list)
 
     # Iterazione sui documenti del Gold Standard
     for gs_entry in gs_data_list:
         url = gs_entry.get("url")
         gold_text = gs_entry.get("gold_text")
-        
         if not url or not gold_text:
             continue
 
@@ -141,7 +152,7 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
             total_precision += metrics["precision"]
             total_recall += metrics["recall"]
             total_f1 += metrics["f1"]
-            doc_count += 1
+            
 
         except HTTPException:
             # Gestione silente o log dell'errore per documenti non raggiungibili durante il test

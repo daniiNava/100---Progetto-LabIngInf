@@ -2,7 +2,7 @@
 from fastapi import HTTPException
 from typing import Dict
 from parser import ParserWikipediaIT, ParserBBC, ParserRepubblica, ParserPeople
-
+import re 
 async def run_parser(url: str, domain: str) -> Dict[str, str]:
     """Servizio asincrono per l'estrazione e la pulizia del testo da una pagina Web."""
 
@@ -27,41 +27,37 @@ async def run_parser(url: str, domain: str) -> Dict[str, str]:
             status_code=500, 
             detail=f"Errore interno del server durante il parsing: {str(e)}"
         )
-    
-    
-    
-    # browser_cfg = BrowserConfig(headless=True) 
-    
-    # # Definizione di selettori specifici per migliorare la qualità dell'output per LLM
-    # # Se il dominio è uno di quelli assegnati successivamente (ovvero è una testata giornalistica), 
-    # # si escludono utleriori elementi di disturbo
-    # excluded = ['nav', 'footer', 'script', 'style', 'aside', '.ads', '.social.share']
 
-    # crawler_cfg = CrawlerRunConfig(
-    #     cache_mode=CacheMode.BYPASS,
-    #     excluded_tags=excluded,
-    #     magic_mode=True  # Opzione di Crawl4AI per bypassare i blocchi anti-bot tipici dei siti di news
-    # )
-    
-    # try:
-    #     async with AsyncWebCrawler(config=browser_cfg) as crawler:
-    #         result = await crawler.arun(url=url, config=crawler_cfg)
+#nuova funzione 
 
-    #         if not result.success:
-    #             # Sollevare un'eccezione HTTP che viene gestita automaticamente da FastAPI
-    #             raise HTTPException(
-    #                 status_code=502, 
-    #                 detail=f"Errore del crawler su {domain}: {result.error.message}"
-    #             )
-    #         return {
-    #             "url": url, 
-    #             "domain": domain, 
-    #             "title": result.metadata.get('title', 'Titolo mancante') if result.metadata else 'Titolo mancante',
-    #             "html_text": result.html,
-    #             "parsed_text": result.markdown
-    #         }
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=500, 
-    #         detail=f"Errore interno del server durante il parsing: {str(e)}"
-    #     )
+async def run_parser_raw(url: str, domain:str, html_text: str) -> Dict[str, str]:
+    parser=None
+    match domain:
+        case "it.wikipedia.org":
+            parser = ParserWikipediaIT()
+        case "people.com": 
+            parser = ParserPeople()
+        case "www.bbc.com":
+            parser = ParserBBC()
+        case "www.repubblica.it":
+            parser = ParserRepubblica()
+        case _: 
+            raise HTTPException(status_code=400, detail="Dominio non supportato")
+    try: 
+         match_title = re.search(r'<title>(.*?)</title>', html_text, re.IGNORECASE)
+         extracted_title = match_title.group(1) if match_title else "Titolo non disponibile"
+         mock_gs_data= {
+              "url":url,
+              "title":extracted_title,
+              "html_text": html_text 
+         }
+         return await parser.parse_by_gs(mock_gs_data)
+    except Exception as e:
+         raise HTTPException(
+              status_code=500,
+              detail=f"Errore interno del server durante il parsing raw. {str(e)}"
+         )
+    
+    
+    
+    
