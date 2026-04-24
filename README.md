@@ -10,4 +10,4 @@
    docker run --network host lab-grader-esonero-1:1.0.1 <vostra_matricola>
 
 0. Per annullare il tentativo precedente
-    docker compose down
+   docker compose down
