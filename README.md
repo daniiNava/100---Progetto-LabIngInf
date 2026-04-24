@@ -11,3 +11,8 @@
 
 0. Per annullare il tentativo precedente
    docker compose down
+
+
+
+
+  
