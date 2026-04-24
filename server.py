@@ -1,7 +1,7 @@
 import asyncio
 from parser import ParserWikipediaIT,ParserBBC,ParserPeople,ParserRepubblica,Parser
 from markdownCleaner import MarkdownCleaner
-from tokenLevelEval import TokenLevelEval
+from tokenLevelEval import calculate_metrics
 import json
 def scrivi_json(dati : dict):
     with open('risultato.json', 'w', encoding='utf-8') as f:
@@ -12,7 +12,6 @@ async def testWikipediaIT():
     with open('GS/WikipediaIT.json', 'r', encoding='utf-8') as gs:
         gs_file = json.load(gs)
     await validate_gs(gs_file,parser)
-    await validate_url("","https://it.wikipedia.org/wiki/Python",parser)
 
 async def testBBC():
     parser = ParserBBC()
@@ -40,22 +39,26 @@ async def validate_gs(gs_file : dict, parser : Parser):
         ret = await parser.parse_by_gs(gs_json)
         parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
 
-        result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
-        print(f"{ret["title"]} : {result:2f}")
+        result = calculate_metrics(parsed_text_cleaned,gold_text)
+        print(f"{ret["title"]} : {result["f1"]:2f}")
         
-async def validate_url(gold_text : str, url : str, parser : Parser): 
-    ret = await parser.parse_by_url(url)
-    parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+async def validate_url(gs_file : dict, parser : Parser): 
+    for gs_json in gs_file:
+        gold_text = gs_json["gold_text"]
+        url = gs_json["url"]
 
-    result = TokenLevelEval.eval(parsed_text_cleaned,gold_text)
-    print(f"{ret["title"]} : {result:2f}")
-    scrivi_json(ret)
+        ret = await parser.parse_by_url(url)
+        parsed_text_cleaned = MarkdownCleaner.clean(ret["parsed_text"])
+
+        result = calculate_metrics(parsed_text_cleaned,gold_text)
+        print(f"{ret["title"]} : {result["f1"]:2f}")
+        scrivi_json(ret)
 
 async def main():
     await testWikipediaIT()
-    await testBBC()
-    await testRepubblica()
-    await testPeople()
+    #await testBBC()
+    #await testRepubblica()
+    #await testPeople()
 
 
 if __name__ == "__main__":
