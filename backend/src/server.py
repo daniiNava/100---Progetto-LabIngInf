@@ -138,12 +138,13 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
     for gs_entry in gs_data_list:
         url = gs_entry.get("url")
         gold_text = gs_entry.get("gold_text")
+        html_text = gs_entry.get("html_text")
         if not url or not gold_text:
             continue
 
         try:
             #Esecuzione del parsing live per il documento corrente
-            parse_result = await run_parser(url, domain)
+            parse_result = await run_parser_raw(url, domain,html_text)
             parsed_text = parse_result.get("parsed_text", "")
 
             # Calcolo delle metriche per la singola iterazione

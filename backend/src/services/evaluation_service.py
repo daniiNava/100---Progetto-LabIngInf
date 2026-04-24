@@ -22,7 +22,7 @@ def _tokenize(text: str) -> set[str]:
     # 3. IL SEGRETO: \W+ sostituisce TUTTO ciò che non è una lettera o un numero con uno spazio.
     # Questo elimina in un colpo solo virgole, punti, asterischi, cancelletti, ecc.
     text = re.sub(r'\W+', ' ', text)
-    
+    text = re.sub(r"_", "", text)
     # 4. Lowercase, split per spazio e conversione in SET
     tokens = text.lower().split()
     
@@ -46,7 +46,6 @@ def calculate_metrics(parsed_text: str, gold_text: str) -> Dict[str, float]:
     f1 = 0.0
     if (precision + recall) > 0:
         f1 = 2 * precision * recall / (precision + recall)
-        
     return {
         "precision": round(precision, 4),
         "recall": round(recall, 4),
