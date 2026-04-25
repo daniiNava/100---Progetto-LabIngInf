@@ -1,15 +1,16 @@
-# Questo è il modulo principale del server, definisce l'istanza FastAPI e gli endpoint sulla porta 8004.
-# Inoltre, c'è la gestione delle richieste HTTP.
-
+"""
+Modulo principale dell'applicazione FastAPI. Gestisce il routing delle richieste HTTP, 
+l'abilitazione del CORS e i servizi di parsing e valutazione.
+"""
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from urllib.parse import urlparse
-
 import sys
 import asyncio
+
+# Fix per l'esecuzione di Playwright su Windows (Crawl4AI) in ambiente Windows
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
 
 from models import (
     DocumentData, EvaluateRequest, EvaluateResponse, DomainsResponse, 
@@ -21,7 +22,7 @@ from services.gs_service import get_gold_standard_by_url, get_full_gold_standard
 
 app = FastAPI(title="Minera Web Parser API", version="1.0")
 
-# Abilitazione CORS per permettere al frontend (porta 8004) di comunicare con noi (porta 8003)
+# Configurazione CORS per consentire la comunicazione con il frontend (Web UI)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,33 +31,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Definizione dei domini supportati
+# Lista dei domini supportati dal sistema
 SUPPORTED_DOMAINS = ["it.wikipedia.org", "people.com", "www.bbc.com", "www.repubblica.it"]
 
 @app.get("/domains", response_model=DomainsResponse)
 async def get_domains():
-    """Restituisce la lista dei domini supportati."""
+    """Restituisce la lista dei domini web supportati dal sistema."""
     return DomainsResponse(domains=SUPPORTED_DOMAINS)
 
 @app.get("/parse", response_model=DocumentData)
-async def parse_url(url: str = Query(..., description="URL da parsare")):
-    """Esegue il parser per un documento di un dominio supportato."""
-    # 1. Estrazione del dominio dall'URL
+async def parse_url(url: str = Query(..., description="URL ddella pagina web da parsare")):
+    """
+    Riceve un URL, ne verifica la validità e delega l'estrazione 
+    del testo al servizio di parsing asincrono.
+    """
+    # Estrazione del dominio dall'URL
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
 
-    # 2. Chiamata al servizio asincrono di parsing (Crawl4AI)
-    # Il costrutto 'await' delega l'esecuzione senza bloccare il thread principale
+    # Chiamata al servizio asincrono di parsing (Crawl4AI)
     result_dict = await run_parser(url, domain)
 
-    # 3. Restituzione dei dati (Serializzazione tramite il modello Pydantic)
+    #Restituzione dei dati (Serializzazione tramite il modello Pydantic)
     return result_dict
-    # return DocumentData(**result_dict)
+
+@app.post("/parse", response_model=DocumentData)
+async def parse_raw_html(request: ParseRequest):
+
+    """
+    Esegue il parsing partendo da un HTML grezzo fornito nel body della richiesta,
+    evitando il download della pagina tramite rete.
+    """
+
+    parsed_url=urlparse(request.url)
+    domain=parsed_url.netloc
+
+    if not domain:
+        raise HTTPException(status_code=400, detail="Formato URL non valido")
+    
+    if domain not in SUPPORTED_DOMAINS:
+        raise HTTPException(status_code=400, detail="Dominio non supportato")
+    
+    result_dict=await run_parser_raw(request.url, domain, request.html_text)
+    return DocumentData(**result_dict)
 
 @app.get("/gold_standard", response_model=GoldStandardData)
 async def get_gold_standard(url: str = Query(..., description="L'URL del documento richiesto")):
-    """Restituisce l'entry del Gold Standard corrispondente all'URL fornito"""
-    # Analisi sintattica dell'URL per estrarre il dominio 
+    """Restituisce l'entry del Gold Standard corrispondente all'URL fornito."""
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
 
@@ -74,7 +95,7 @@ async def get_gold_standard(url: str = Query(..., description="L'URL del documen
 
 @app.get("/full_gold_standard", response_model=FullGoldStandardResponse)
 async def get_full_gold_standard_endpoint(domain: str = Query(..., description="Il dominio di cui si richiede l'interno GS")):
-    """Restituisce tutte le entry del Gold Standard per un dominio specifico"""
+    """Restituisce tutte le entry del Gold Standard per un dominio specifico."""
     
     if domain not in SUPPORTED_DOMAINS:
         raise HTTPException(status_code=400, detail="Dominio non supportato")
@@ -85,23 +106,11 @@ async def get_full_gold_standard_endpoint(domain: str = Query(..., description="
     # Serializzazione tramite Pydantic
     return FullGoldStandardResponse(gold_standard=gs_data)
 
-@app.post("/parse", response_model=DocumentData)
-async def parse_raw_html(request: ParseRequest):
-    #eseguiamo il parsing da un html grezzo fornito dall'utente
-    parsed_url=urlparse(request.url)
-    domain=parsed_url.netloc
-    if not domain:
-        raise HTTPException(status_code=400, detail="Formato URL non valido")
-    if domain not in SUPPORTED_DOMAINS:
-        raise HTTPException(status_code=400, detail="Dominio non supportato")
-    result_dict=await run_parser_raw(request.url, domain, request.html_text)
-    return DocumentData(**result_dict)
-
-@app.post("/evaluate", response_model=EvaluateResponse)     # Valutazione singola
+@app.post("/evaluate", response_model=EvaluateResponse)
 async def evaluate_document(request: EvaluateRequest):
     """
     Calcola le metriche di valutazione (Precision, Recall, F1-Score) 
-    confrontando un testo estratto con il relativo Golden Standard
+    confrontando un testo estratto con il relativo Golden Standard.
     """
 
     # Invocazione del servizio matematico per il calcolo delle metriche
@@ -114,11 +123,11 @@ async def evaluate_document(request: EvaluateRequest):
     # Restituzione della risposta strutturata
     return EvaluateResponse(token_level_eval=token_eval)
 
-@app.get("/full_gs_eval", response_model=EvaluateResponse)      # Valutazione generale di un dominio
+@app.get("/full_gs_eval", response_model=EvaluateResponse)
 async def evaluate_full_domain(domain: str = Query(..., description="Il dominio da valutare")):
     """
     Esegue una valutazione completa: recupera il Gold Standard per il dominio,
-    effettua il parsing live degli URL e calcola le metriche medie
+    effettua il parsing offline (tramite HTML salvato) degli URL e calcola le metriche medie.
     """
     if domain not in SUPPORTED_DOMAINS:
         raise HTTPException(status_code=400, detail="Dominio non supportato")
@@ -139,11 +148,12 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
         url = gs_entry.get("url")
         gold_text = gs_entry.get("gold_text")
         html_text = gs_entry.get("html_text")
+        
         if not url or not gold_text:
             continue
 
         try:
-            #Esecuzione del parsing live per il documento corrente
+            # Ottimizzazione: parsing dell'HTML locale senza chiamate di rete
             parse_result = await run_parser_raw(url, domain,html_text)
             parsed_text = parse_result.get("parsed_text", "")
 
@@ -156,7 +166,7 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
             
 
         except HTTPException:
-            # Gestione silente o log dell'errore per documenti non raggiungibili durante il test
+            # Ignora i documenti problematici per non bloccare la valutazione globale
             continue
 
     if doc_count == 0:
@@ -174,7 +184,6 @@ async def evaluate_full_domain(domain: str = Query(..., description="Il dominio 
         f1=round(avg_f1, 4),
     )
 
-    # Restituzione di EvaluateResponse
     return EvaluateResponse(token_level_eval=avg_token_eval)
 
 if __name__ == "__main__":
@@ -186,6 +195,7 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     
+    # Avvio del server per ambiente di sviluppo locale
     uvicorn.run(app, host="127.0.0.1", port=8003)
 
-    # avviare semplicemente scrviendo nel termile: "python server.py"
+    # avviare semplicemente scrivendo nel terminale: "python server.py"
