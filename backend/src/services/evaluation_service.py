@@ -48,9 +48,6 @@ def calculate_metrics(parsed_text: str, gold_text: str) -> Dict[str, float]:
     f1 = 0.0
     if (precision + recall) > 0:
         f1 = 2 * precision * recall / (precision + recall)
-
-    
-    
     return {
         "precision": round(precision, 4),
         "recall": round(recall, 4),
