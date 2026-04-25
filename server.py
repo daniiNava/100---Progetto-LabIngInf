@@ -55,10 +55,10 @@ async def validate_url(gs_file : dict, parser : Parser):
         scrivi_json(ret)
 
 async def main():
-    await testWikipediaIT()
+    #await testWikipediaIT()
     #await testBBC()
     #await testRepubblica()
-    #await testPeople()
+    await testPeople()
 
 
 if __name__ == "__main__":

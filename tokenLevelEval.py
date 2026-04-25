@@ -49,7 +49,7 @@ def calculate_metrics(parsed_text: str, gold_text: str) -> Dict[str, float]:
     if (precision + recall) > 0:
         f1 = 2 * precision * recall / (precision + recall)
     if f1 != 1:
-        a = tokens_estratti.difference(tokens_gs)
+        a = tokens_gs.difference(tokens_estratti)
     
     
     return {
