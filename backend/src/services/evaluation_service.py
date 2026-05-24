@@ -1,7 +1,21 @@
 import re
 import math
+import requests
+import json
+import os
 from collections import Counter
 from typing import Dict
+
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
+MODEL_NAME = "llama3.2:3b"
+
+def check_ollama_status() -> str:
+    """Verifica se il server Ollama è raggiungibile."""
+    try:
+        res = requests.get(f"{OLLAMA_URL}/", timeout=2)
+        return "ok" if res.status_code == 200 else "error"
+    except requests.RequestException:
+        return "error"
 
 def _tokenize(text: str) -> set[str]:
     """
@@ -54,6 +68,66 @@ def calculate_metrics(parsed_text: str, gold_text: str) -> Dict[str, float]:
         "f1": round(f1, 4),
         
     }
+
+async def evaluate_with_llm(parsed_text: str, gold_text: str) -> dict:
+    """
+    Invia il testo al LLM e chiede una valutazione da 1 a 5.
+    Implementa un meccanismo di Fallback robusto in caso di allucinazioni del modello.
+    """
+    system_prompt = """
+    Sei un giudice imparziale e severo. Il tuo compito è valutare la qualità di un testo estratto da una pagina web (Parsed Text) confrontandolo con il testo di riferimento perfetto (Gold Standard).
+    Penalizza la presenza di menu, pubblicità, testo troncato o rumore.
+    Devi rispondere ESCLUSIVAMENTE con un oggetto JSON valido, senza aggiungere altro testo prima o dopo.
+    Il formato DEVE essere esattamente questo:
+    {
+        "score": <intero da 1 a 5>,
+        "feedback": "<breve motivazione della tua valutazione>"
+    }
+    """
+
+    user_prompt = f"Gold Standard:\n{gold_text}\n\nParsed Text:\n{parsed_text}"
+
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        "format": "json", 
+        "stream": False,
+        "options": {"temperature": 0.1}
+    }
+
+    try:
+        response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=120)
+        response.raise_for_status()
+        
+        llm_response_text = response.json()["message"]["content"]
+        
+        try:
+            result_data = json.loads(llm_response_text)
+            score = max(1, min(5, int(result_data.get("score", 1))))
+            feedback = str(result_data.get("feedback", "Nessun feedback fornito."))
+            
+            return {
+                "model_name": MODEL_NAME,
+                "judge_score": score,
+                "judge_feedback": feedback
+            }
+            
+        except (json.JSONDecodeError, ValueError):
+            return {
+                "model_name": MODEL_NAME,
+                "judge_score": 1,
+                "judge_feedback": "FALLBACK: Il modello non ha rispettato il formato JSON richiesto."
+            }
+
+    except requests.RequestException as e:
+        return {
+            "model_name": MODEL_NAME,
+            "judge_score": 0,
+            "judge_feedback": f"ERRORE DI RETE: Impossibile contattare il Judge LLM ({e})."
+        }
 
 def calculate_levenshtein_distance(parsed_text: str, gold_text: str) -> int:
     #calcola quante operazioni (inserimenti, cancellazioni, sostituzioni) servono per trasformare il testo estratto dal parser nel testo perfetto del gs

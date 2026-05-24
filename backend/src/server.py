@@ -17,7 +17,7 @@ from models import (
     TokenLevelEval, GoldStandardData, FullGoldStandardResponse, ParseRequest
 )
 from services.parser_service import run_parser, run_parser_raw
-from services.evaluation_service import calculate_metrics
+from services.evaluation_service import calculate_metrics, evaluate_with_llm, check_ollama_status
 from services.gs_service import get_gold_standard_by_url, get_full_gold_standard
 
 app = FastAPI(title="Minera Web Parser API", version="1.0")
@@ -115,7 +115,6 @@ async def evaluate_document(request: EvaluateRequest):
 
     # Invocazione del servizio matematico per il calcolo delle metriche
     metrics_dict = calculate_metrics(request.parsed_text, request.gold_text)
-
     # Instanziazione del modello annidato TokenLevelEval
     # token_eval = metrics_dict
     token_eval = TokenLevelEval(**metrics_dict)
