@@ -28,6 +28,8 @@ services:
       - "8004:8004"
     environment:
       - PYTHONUNBUFFERED=1
+      - BACKEND_URL=http://backend:8003
+      - OLLAMA_URL=http://ollama:11434
     depends_on:
       - backend
   
@@ -44,9 +46,11 @@ services:
     volumes: 
       - ./mariadb_data:/var/lib/mysql
   ollama:
-    image: ollama/ollama:latest 
+    image: ollama/ollama:latest
     container_name: minerva_ollama
-    ports: 
+    ports:
       - "11434:11434"
-    volumes: 
-      -./ollama_data:/root/.ollama
+    volumes:
+      - ./ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama serve & sleep 5 && ollama pull llama3.2:3b && wait"]

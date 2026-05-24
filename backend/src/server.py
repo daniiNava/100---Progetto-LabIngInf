@@ -24,13 +24,12 @@ from models import (
 
 # Importazione dei servizi
 from services.parser_service import run_parser, run_parser_raw
-from services.evaluation_service import calculate_metrics
+from services.evaluation_service import calculate_metrics, evaluate_with_llm, check_ollama_status
 from services.db_service import (
     get_gs_by_url_from_db, get_full_gs_from_db, get_gs_urls_from_db,
     get_html_from_db, insert_web_resource, insert_gold_standard,
     delete_web_resource, delete_gold_standard, get_db_stats, get_db_schema, check_db_status
 )
-from services.llm_service import evaluate_with_llm, check_ollama_status, pull_model_if_missing
 
 # ==============================
 # LIFESPAN (Avvio in Docker)
@@ -44,9 +43,6 @@ async def lifespan(app: FastAPI):
         # 1. Popolamento del DB all'avvio
         from init_db_script import populate_db_from_json
         populate_db_from_json()
-
-        # 2. Download del modello LLM se mancante
-        pull_model_if_missing()
     except Exception as e:
         print(f"Errore durante l'inizializzazione (Lifespan): {e}")
     yield
@@ -182,7 +178,6 @@ async def evaluate_document(request: EvaluateRequest):
 
     # Invocazione del servizio matematico per il calcolo delle metriche
     metrics_dict = calculate_metrics(request.parsed_text, request.gold_text)
-
     # Instanziazione del modello annidato TokenLevelEval
     # token_eval = metrics_dict
     token_eval = TokenLevelEval(**metrics_dict)
