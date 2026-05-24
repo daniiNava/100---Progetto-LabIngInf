@@ -5,9 +5,11 @@ l'abilitazione del CORS e i servizi di parsing, valutazione, database e LLM.
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from typing import Dict, Any
 from urllib.parse import urlparse
 import sys
 import asyncio
+
 
 # Fix per l'esecuzione di Playwright su Windows (Crawl4AI) in ambiente Windows
 if sys.platform == "win32":
@@ -28,7 +30,7 @@ from services.db_service import (
     get_html_from_db, insert_web_resource, insert_gold_standard,
     delete_web_resource, delete_gold_standard, get_db_stats, get_db_schema, check_db_status
 )
-from services.llm_service import evaluate_with_llm, check_ollama_status
+from services.llm_service import evaluate_with_llm, check_ollama_status, pull_model_if_missing
 
 # ==============================
 # LIFESPAN (Avvio in Docker)
