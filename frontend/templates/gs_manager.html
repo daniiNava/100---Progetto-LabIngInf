@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Gestione Gold Standard</h1>
+    <p>Aggiungi nuove pagine al database o rimuovi quelle esistenti.</p>
+
+    {% if message %}
+        <div style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+            {{ message }}
+        </div>
+    {% endif %}
+    {% if error %}
+        <div style="background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="grid">
+        <!-- FORM DI AGGIUNTA -->
+        <div class="card" style="flex: 2;">
+            <h3>Aggiungi Nuova Entry</h3>
+            <form action="/gs_manager/add" method="post">
+                <div class="form-group">
+                    <label>URL della pagina:</label><br>
+                    <input type="text" name="url" placeholder="https://..." required style="width: 95%;">
+                </div>
+                <div class="form-group">
+                    <label>HTML Grezzo (Sorgente pagina):</label><br>
+                    <textarea name="html_text" rows="6" required style="width: 95%; padding: 10px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Testo Gold Standard (Pulito, copiato a mano):</label><br>
+                    <textarea name="gold_text" rows="6" required style="width: 95%; padding: 10px;"></textarea>
+                </div>
+                <button type="submit" style="background-color: #28a745;">Salva nel Database</button>
+            </form>
+        </div>
+
+        <!-- FORM DI CANCELLAZIONE -->
+        <div class="card" style="flex: 1;">
+            <h3>Rimuovi Entry Esistente</h3>
+            <form action="/gs_manager/delete" method="post">
+                <div class="form-group">
+                    <label>Seleziona URL da eliminare:</label><br>
+                    <select name="url" required style="width: 100%;">
+                        <option value="">-- Seleziona --</option>
+                        {% for u in gs_urls %}
+                            <option value="{{ u }}">{{ u }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" style="background-color: #dc3545;">Elimina Definitivamente</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

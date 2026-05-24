@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Valutazione Parser</h1>
+    
+    <!-- ATTENZIONE: action ora punta a /evaluation -->
+    <form action="/evaluation" method="post" class="form-group">
+        <label for="url">Seleziona un URL dal Gold Standard o inseriscine uno nuovo:</label><br>
+        <select id="url_select" onchange="document.getElementById('url_input').value = this.value;">
+            <option value="">-- Seleziona un URL dal GS --</option>
+            {% for u in gs_urls %}
+                <option value="{{ u }}">{{ u }}</option>
+            {% endfor %}
+        </select><br>
+        <input type="text" id="url_input" name="url" placeholder="https://..." required>
+
+        <div style="margin-top: 15px; margin-bottom: 15px;">
+            <input type="checkbox" id="use_local" name="use_local" value="true">
+            <label for="use_local" style="font-weight: bold; color: #555;"> Usa HTML salvato nel Database (Local Mode)</label>
+        </div>
+        <button type="submit">Analizza</button>
+    </form>
+
+    {% if results or error_msg %}
+        {% if error_msg %}
+            <p class="error">{{ error_msg }}</p>
+        {% else %}
+            <div style="display: flex; gap: 20px;">
+                <!-- Metriche Matematiche -->
+                {% if evaluation %}
+                <div class="metrics" style="flex: 1;">
+                    <h3>📊 Metriche Matematiche</h3>
+                    <p>
+                        <strong>Precision:</strong> {{ evaluation.token_level_eval.precision }} <br>
+                        <strong>Recall:</strong> {{ evaluation.token_level_eval.recall }} <br>
+                        <strong>F1-Score:</strong> {{ evaluation.token_level_eval.f1 }}
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- NUOVO: Giudizio LLM -->
+                {% if judge_data %}
+                <div class="metrics" style="flex: 1; background: #e3f2fd; border-left-color: #2196f3;">
+                    <h3>🤖 Giudizio LLM ({{ judge_data.model_name }})</h3>
+                    <p>
+                        <strong>Score:</strong> <span style="font-size: 1.2em; font-weight: bold;">{{ judge_data.judge_score }} / 5</span> <br>
+                        <strong>Feedback:</strong> {{ judge_data.judge_feedback }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="grid">
+                <div class="col">
+                    <h3>Testo Parsato (Markdown)</h3>
+                    <pre>{{ results.parsed_text }}</pre>
+                </div>
+                <div class="col">
+                    <h3>Testo Gold Standard</h3>
+                    <pre>{% if gold_data %}{{ gold_data.gold_text }}{% else %}Nessun Gold Standard trovato per questo URL.{% endif %}</pre>
+                </div>
+                <div class="col">
+                    <h3>HTML Grezzo</h3>
+                    <pre>{{ results.html_text }}</pre>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}

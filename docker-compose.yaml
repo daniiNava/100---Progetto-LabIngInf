@@ -9,16 +9,44 @@ services:
       - "8003:8003"
     volumes: 
       - ./:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=database
+      - DB_PORT=3306
+      - DB_USER=minerva_user 
+      - DB_PASSWORD=minerva_db 
+      - OLLAMA_URL= http://ollama:11434
+    depends on:
+      - database #il backend aspetta che il db sia pronto
+      - ollama #il backend aspetta che ollama sia pronto
         
 
   frontend:
-    build:
-      context: ./frontend
+    build: ./frontend 
+    container_name: minerva_frontend
     ports:
       - "8004:8004"
     environment:
-      - BACKEND_URL=http://backend:8003
+      - PYTHONUNBUFFERED=1
     depends_on:
       - backend
+  
+  database: 
+    image: mariadb: 10.11
+    container_name: minerva_db 
+    ports: 
+      - "3306:3306"
+    environment: 
+      - MARIADB_ROOT_PASSWORD=rootpass 
+      - MARIADB_DATABASE=minerva_db 
+      - MARIADB_USER=minerva_user 
+      - MARIADB_PASSWORD=minerva_pass 
     volumes: 
-      - ./:/app
+      - ./mariadb_data:/var/lib/mysql
+  ollama:
+    image: ollama/ollama:latest 
+    container_name: minerva_ollama
+    ports: 
+      - "11434:11434"
+    volumes: 
+      -./ollama_data:/root/.ollama
