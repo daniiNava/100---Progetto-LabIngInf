@@ -14,9 +14,9 @@ services:
       - DB_HOST=database
       - DB_PORT=3306
       - DB_USER=minerva_user 
-      - DB_PASSWORD=minerva_db 
+      - DB_PASSWORD=minerva_pass
       - OLLAMA_URL= http://ollama:11434
-    depends on:
+    depends_on:
       - database #il backend aspetta che il db sia pronto
       - ollama #il backend aspetta che ollama sia pronto
         
@@ -34,7 +34,7 @@ services:
       - backend
   
   database: 
-    image: mariadb: 10.11
+    image: mariadb:10.11
     container_name: minerva_db 
     ports: 
       - "3306:3306"

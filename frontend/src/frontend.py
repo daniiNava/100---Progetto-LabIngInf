@@ -16,9 +16,10 @@ app= FastAPI(title="Minerva Web UI")
 #templates=Jinja2Templates("templates")
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+templates_path = os.path.join(current_dir, "templates")
+templates = Jinja2Templates(directory=templates_path)
+
 
 
 
@@ -40,9 +41,9 @@ def get_gs_urls():
         if response.status_code==200: 
             lista_domini=response.json().get("domains", []) #prendiamo la risposta del backend (che arriva in formato json) e la convertiamo in un dizionario python ed estraiamo il valore associato alla chiave "domains"
             
-            # 2. Recupero degli URL per ciascun dominio interrogando l'endpoint /full_gold_standard
+            # 2. Recupero degli URL per ciascun dominio interrogando l'endpoint /gold_standard_urls
             for dominio in lista_domini:
-                res_gs=requests.get(f"{API_BASE_URL}/full_gold_standard", params={"domain":dominio}) 
+                res_gs=requests.get(f"{API_BASE_URL}/gold_standard_urls", params={"domain":dominio}) 
                 if res_gs.status_code==200:
                     urls=res_gs.json().get("gold_standard_urls", []) 
                     gs_urls.extend(urls)
@@ -120,7 +121,7 @@ async def evaluation_post(request: Request, url: str = Form(...), use_local: boo
 
     try:
         parse_payload= {"url": url, "local": use_local}
-        richiesta_parser = requests.get(f"{API_BASE_URL}/parse", json=parse_payload)
+        richiesta_parser = requests.post(f"{API_BASE_URL}/parse", json=parse_payload)
         if richiesta_parser.status_code == 200:
             results = richiesta_parser.json()
             
