@@ -255,16 +255,14 @@ def get_db_schema() -> dict:
     }
 
 def get_db_stats() -> dict:
-    """Calcola le statistiche di base e le medie delle valutazioni."""
+    """Calcola solo i conteggi di base dal database."""
     conn = get_connection()
-    if not conn: return {}
+    if not conn: return {"web_resources": {}, "gold_standard": {}}
     cursor = conn.cursor(dictionary=True)
     
     stats = {
         "web_resources": {}, 
-        "gold_standard": {},
-        "avg_eval": {},
-        "avg_eval_judge": {}
+        "gold_standard": {}
     }
     
     # 1. Conteggio web_resources per dominio
@@ -285,37 +283,4 @@ def get_db_stats() -> dict:
     cursor.close()
     conn.close()
     
-    # 3. Calcolo delle medie (Chiamando l'endpoint interno di FastAPI)
-    # Per evitare dipendenze circolari, importiamo la funzione qui
-    from server import evaluate_full_domain
-    import asyncio
-    
-    # Calcoliamo le medie per ogni dominio supportato
-    # (In un progetto reale si salverebbero nel DB, qui le calcoliamo al volo)
-    SUPPORTED_DOMAINS = ["it.wikipedia.org", "people.com", "www.bbc.com", "www.repubblica.it"]
-    
-    for domain in SUPPORTED_DOMAINS:
-        if stats["gold_standard"].get(domain, 0) > 0:
-            try:
-                # Eseguiamo la funzione asincrona in modo sincrono
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # Se siamo già in un loop asincrono (es. FastAPI), creiamo un task
-                    task = asyncio.create_task(evaluate_full_domain(domain))
-                    # Aspettiamo che finisca (questo è un po' un hack, ma funziona per il progetto)
-                    # Il modo corretto sarebbe rendere get_db_stats asincrona
-                else:
-                    eval_res = loop.run_until_complete(evaluate_full_domain(domain))
-                
-                # Per semplicità, in questo progetto universitario, 
-                # simuliamo i risultati se non riusciamo a calcolarli al volo
-                stats["avg_eval"][domain] = {
-                    "token_level_eval": {"precision": 1.0, "recall": 1.0, "f1": 1.0}
-                }
-                stats["avg_eval_judge"][domain] = {
-                    "judge_score": 5.0
-                }
-            except Exception as e:
-                print(f"Errore calcolo medie per {domain}: {e}")
-                
     return stats

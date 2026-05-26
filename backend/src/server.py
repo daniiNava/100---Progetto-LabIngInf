@@ -277,8 +277,36 @@ async def delete_gold_standard(request: DeleteRequest):
 
 @app.get("/db_stats", response_model=Dict[str, Any])
 async def get_db_stats_endpoint():
-    """Restituisce statistiche aggregate dal DB."""
-    return get_db_stats()
+    """Restituisce statistiche aggregate dal DB e calcola le medie reali."""
+    # 1. Prende i conteggi dal database
+    base_stats = get_db_stats()
+    
+    # 2. Prepara i dizionari per le medie
+    base_stats["avg_eval"] = {}
+    base_stats["avg_eval_judge"] = {}
+    
+    # 3. Calcola le medie reali per ogni dominio che ha almeno un Gold Standard
+    for domain in SUPPORTED_DOMAINS:
+        if base_stats["gold_standard"].get(domain, 0) > 0:
+            try:
+                # Chiamata asincrona pulita alla nostra stessa funzione!
+                eval_res = await evaluate_full_domain(domain)
+                
+                # Formattazione esatta richiesta dalle slide del prof
+                base_stats["avg_eval"][domain] = {
+                    "token_level_eval": {
+                        "precision": eval_res.token_level_eval.precision,
+                        "recall": eval_res.token_level_eval.recall,
+                        "f1": eval_res.token_level_eval.f1
+                    }
+                }
+                base_stats["avg_eval_judge"][domain] = {
+                    "judge_score": eval_res.judge_score
+                }
+            except Exception as e:
+                print(f"Errore durante il calcolo delle statistiche per {domain}: {e}")
+                
+    return base_stats
 
 @app.get("/db_schema", response_model=Dict[str, Any])
 async def get_db_schema_endpoint():

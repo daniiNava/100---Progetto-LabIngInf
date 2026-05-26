@@ -6,7 +6,7 @@ import os
 from collections import Counter
 from typing import Dict
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
+OLLAMA_URL = "http://ollama:11434"
 MODEL_NAME = "llama3.2:3b"
 
 def check_ollama_status() -> str:
@@ -72,20 +72,23 @@ def calculate_metrics(parsed_text: str, gold_text: str) -> Dict[str, float]:
 async def evaluate_with_llm(parsed_text: str, gold_text: str) -> dict:
     """
     Invia il testo al LLM e chiede una valutazione da 1 a 5.
-    Implementa un meccanismo di Fallback robusto in caso di allucinazioni del modello.
+    Implementa il troncamento del testo (autorizzato dalle specifiche) 
+    per garantire tempi di esecuzione rapidi anche su CPU.
     """
+    # TRONCAMENTO UFFICIALE: Limitiamo a 2500 caratteri (~500 parole)
+    MAX_CHARS = 2500 
+    
+    short_parsed = parsed_text[:MAX_CHARS] + ("..." if len(parsed_text) > MAX_CHARS else "")
+    short_gold = gold_text[:MAX_CHARS] + ("..." if len(gold_text) > MAX_CHARS else "")
+
     system_prompt = """
-    Sei un giudice imparziale e severo. Il tuo compito è valutare la qualità di un testo estratto da una pagina web (Parsed Text) confrontandolo con il testo di riferimento perfetto (Gold Standard).
-    Penalizza la presenza di menu, pubblicità, testo troncato o rumore.
-    Devi rispondere ESCLUSIVAMENTE con un oggetto JSON valido, senza aggiungere altro testo prima o dopo.
-    Il formato DEVE essere esattamente questo:
-    {
-        "score": <intero da 1 a 5>,
-        "feedback": "<breve motivazione della tua valutazione>"
-    }
+    Sei un giudice imparziale. Valuta la qualità del testo estratto (Parsed Text) confrontandolo con il riferimento (Gold Standard).
+    Penalizza la presenza di menu, pubblicità o rumore.
+    Rispondi ESCLUSIVAMENTE con un JSON valido: {"score": <da 1 a 5>, "feedback": "<motivazione>"}
     """
 
-    user_prompt = f"Gold Standard:\n{gold_text}\n\nParsed Text:\n{parsed_text}"
+    # Passiamo i testi troncati al prompt
+    user_prompt = f"Gold Standard (estratto):\n{short_gold}\n\nParsed Text (estratto):\n{short_parsed}"
 
     payload = {
         "model": MODEL_NAME,
@@ -95,11 +98,16 @@ async def evaluate_with_llm(parsed_text: str, gold_text: str) -> dict:
         ],
         "format": "json", 
         "stream": False,
-        "options": {"temperature": 0.1}
+        "options": {
+            "temperature": 0.1,
+            "num_ctx": 2048,     # Memoria standard, velocissima da processare
+            "num_predict": 150   # Diciamo all'LLM di non scrivere poemi nel feedback, max 150 token
+        }
     }
 
     try:
-        response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=120)
+        # Timeout di sicurezza a 60 secondi
+        response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=60)
         response.raise_for_status()
         
         llm_response_text = response.json()["message"]["content"]
@@ -119,7 +127,7 @@ async def evaluate_with_llm(parsed_text: str, gold_text: str) -> dict:
             return {
                 "model_name": MODEL_NAME,
                 "judge_score": 1,
-                "judge_feedback": "FALLBACK: Il modello non ha rispettato il formato JSON richiesto."
+                "judge_feedback": "FALLBACK: Il modello non ha rispettato il formato JSON."
             }
 
     except requests.RequestException as e:
