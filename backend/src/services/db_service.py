@@ -45,7 +45,7 @@ def init_db():
     # Creazione tabella web_resources
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS web_resources (
-            url VARCHAR(768) PRIMARY KEY,
+            url VARCHAR(2048) PRIMARY KEY,
             domain VARCHAR(255) NOT NULL,
             title VARCHAR(2048),
             html_text LONGTEXT NOT NULL,
@@ -56,7 +56,7 @@ def init_db():
     # Creazione tabella gold_standard con Foreign Key e ON DELETE CASCADE
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS gold_standard (
-            url VARCHAR(768) PRIMARY KEY,
+            url VARCHAR(2048) PRIMARY KEY,
             gold_text LONGTEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (url) REFERENCES web_resources(url) ON DELETE CASCADE

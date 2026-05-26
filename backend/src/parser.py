@@ -136,14 +136,14 @@ class ParserPeople(Parser):
         self.domain = "people.com"
         self.crawler_cfg_parsed = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
-            css_selector=".article-subheading,#article-content_1-0",
-            excluded_tags=["form", "footer","header", "nav", "script", "style", "figure", "img","button","strong"],
-            excluded_selector=".people-sc-block-spotlight,.people-sc-block-featuredlink,.people-sc-block-callout,.people-sc-block-spotlight--mid-circ,.people-sc-block-featuredlink--people-app-promo",
+            # Allarghiamo i selettori per catturare il testo
+            css_selector="article, .article-content, .article-subheading, #article-content_1-0",
+            excluded_tags=["form", "footer", "header", "nav", "script", "style", "figure", "img", "button"],
             exclude_external_images=True,
             exclude_social_media_links=True,
             exclude_external_links=True,
             markdown_generator=DefaultMarkdownGenerator(options={"ignore_links": True})
-            )
+        )
 
 class ParserRepubblica(Parser):
     """Implementazione della strategia di parsing per il dominio www.repubblica.it"""
