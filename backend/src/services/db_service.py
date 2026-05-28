@@ -45,7 +45,7 @@ def init_db():
     # Creazione tabella web_resources
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS web_resources (
-            url VARCHAR(2048) PRIMARY KEY,
+            url VARCHAR(768) PRIMARY KEY,
             domain VARCHAR(255) NOT NULL,
             title VARCHAR(2048),
             html_text LONGTEXT NOT NULL,
@@ -56,7 +56,7 @@ def init_db():
     # Creazione tabella gold_standard con Foreign Key e ON DELETE CASCADE
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS gold_standard (
-            url VARCHAR(2048) PRIMARY KEY,
+            url VARCHAR(768) PRIMARY KEY,
             gold_text LONGTEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (url) REFERENCES web_resources(url) ON DELETE CASCADE
@@ -155,7 +155,7 @@ def insert_web_resource(url: str, html_text: str, title: str = "Titolo non dispo
     
     try:
         cursor.execute(
-            "INSERT INTO web_resources (url, domain, title, html_text) VALUES (?, ?, ?, ?)",
+            "INSERT IGNORE INTO web_resources (url, domain, title, html_text) VALUES (?, ?, ?, ?)",
             (url, domain, title, html_text)
         )
         conn.commit()
@@ -175,19 +175,29 @@ def insert_gold_standard(url: str, gold_text: str) -> bool:
     cursor = conn.cursor()
     
     try:
+        # 1. CONTROLLO ESPLICITO: Verifichiamo se l'URL esiste in web_resources
+        cursor.execute("SELECT url FROM web_resources WHERE url = ?", (url,))
+        if cursor.fetchone() is None:
+            # Se la select non trova nulla, la risorsa web non esiste!
+            print(f"Fallimento: web_resource inesistente per l'URL {url}")
+            return False # Questo farà scattare l'errore 400 in server.py
+
+        # 2. Se esiste, procediamo con l'inserimento
         cursor.execute(
             "INSERT INTO gold_standard (url, gold_text) VALUES (?, ?)",
             (url, gold_text)
         )
         conn.commit()
-        success = True
+        return True
     except mariadb.Error as e:
+        # Se l'errore è un duplicato (codice 1062), lo consideriamo un successo (True)
+        if getattr(e, 'errno', -1) == 1062:
+            return True
         print(f"Errore inserimento gold_standard: {e}")
-        success = False
+        return False
     finally:
         cursor.close()
         conn.close()
-    return success
 
 def delete_web_resource(url: str) -> bool:
     """Cancella una risorsa web (e a cascata il suo GS)."""
@@ -241,14 +251,14 @@ def get_db_schema() -> dict:
     """Restituisce lo schema richiesto dalle slide."""
     return {
         "web_resources": {
-            "url": "varchar(2048), PK",
+            "url": "varchar(768), PK",
             "domain": "varchar(255)",
             "title": "varchar(2048)",
             "html_text": "longtext",
             "created_at": "datetime"
         },
         "gold_standard": {
-            "url": "varchar(2048), PK, FK(web_resources.url)",
+            "url": "varchar(768), PK, FK(web_resources.url)",
             "gold_text": "longtext",
             "created_at": "datetime"
         }

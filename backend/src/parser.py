@@ -6,7 +6,7 @@ applicano regole specifiche (CSS Selector, inizioni JS) per ogni dominio support
 """
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode, DefaultMarkdownGenerator
 from abc import ABC, abstractmethod
-#https://people.com	https://www.bbc.com	https://www.repubblica.it
+#https://people.com https://www.bbc.com https://www.repubblica.it
 class Parser(ABC):
     """
     Classe astratta base (Strategy) per i parser di dominio.
@@ -137,7 +137,7 @@ class ParserPeople(Parser):
         self.crawler_cfg_parsed = CrawlerRunConfig(
             cache_mode=CacheMode.BYPASS,
             # Allarghiamo i selettori per catturare il testo
-            css_selector="article, .article-content, .article-subheading, #article-content_1-0",
+            css_selector=".article-subheading, #article-content_1-0",
             excluded_tags=["form", "footer", "header", "nav", "script", "style", "figure", "img", "button"],
             exclude_external_images=True,
             exclude_social_media_links=True,
