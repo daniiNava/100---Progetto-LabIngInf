@@ -106,8 +106,8 @@ async def parse_url_post(request: ParseUrlRequest):
     if domain not in SUPPORTED_DOMAINS:
         raise HTTPException(status_code=400, detail="Dominio non supportato")
     
-    if domain == "people.com":
-        request.local = False 
+    #if domain == "people.com":
+     #   request.local = False 
     
     if request.local:
         html_text = get_html_from_db(request.url)
